@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-type FuncDecl struct {
-	name       string
-	parameters []string
-	returnType []string
-}
 
 func main() {
 	args := os.Args
@@ -76,103 +72,28 @@ func removeCommonPrefix(list []string) ([]string, error) {
 }
 
 func parseFile(fileName string) error {
-	file, err := os.Open(fileName)
+	fileSet := token.NewFileSet()
+
+	node, err := parser.ParseFile(fileSet, fileName, nil, parser.ParseComments)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while parsing file - %s: %e", fileName, err)
 	}
-	defer file.Close()
+	fmt.Println("Inspecting contents of file", fileName, "in package ", node.Name.Name)
 
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanRunes)
-	funcList := make([]FuncDecl, 0)
-	for scanner.Scan() {
-		word := ""
-		for scanner.Scan() {
-			if scanner.Text() != " " && scanner.Text() != "\n" {
-				word = word + scanner.Text()
-			} else {
-				break
+	ast.Inspect(node, func(n ast.Node) bool {
+		switch element := n.(type) {
+		case *ast.FuncDecl:
+			{
+				fmt.Println("Recognised function", element.Name.Name)
+			}
+		case *ast.TypeSpec:
+			{
+				fmt.Println("Recognised typespec", element.Name.Name)
+
 			}
 		}
-		switch word {
-		case "func":
-			funcList = append(funcList, parseFunc(scanner))
-		default:
-			// fmt.Println("Case not handled: ", word)
-		}
-		// fmt.Printf("%s;", word)
-	}
-	fmt.Println("LIST OF FUNCTIONS", funcList)
-	return nil
-}
+		return true
+	})
 
-func parseFunc(scanner *bufio.Scanner) FuncDecl {
-	var funcName strings.Builder
-	for scanner.Scan() {
-		c := scanner.Text()
-		if c != "(" {
-			funcName.WriteString(c)
-		} else {
-			break
-		}
-	}
-	inputParameterList := parseParameterList(scanner)
-	returnValueList := parseReturnValues(scanner)
-
-	return FuncDecl{name: funcName.String(), parameters: inputParameterList, returnType: returnValueList}
-}
-
-func parseParameterList(scanner *bufio.Scanner) []string {
-	paranthesesCounter := 1
-	parameter := ""
-	parameterList := make([]string, 0)
-	for scanner.Scan() {
-		c := scanner.Text()
-		if c == "," {
-			if paranthesesCounter != 1 {
-				parameter += c
-			} else {
-				parameterList = append(parameterList, parameter)
-				parameter = ""
-			}
-			continue
-		}
-		if c == "(" {
-			paranthesesCounter++
-			parameter += c
-			continue
-		}
-		if c == ")" {
-			if paranthesesCounter == 1 {
-				parameterList = append(parameterList, parameter)
-				break
-			} else {
-				parameter += c
-				paranthesesCounter--
-			}
-			continue
-		}
-		parameter += c
-	}
-	return parameterList
-}
-
-func parseReturnValues(scanner *bufio.Scanner) ([]string) {
-	value := ""
-	for scanner.Scan() {
-		strings.TrimSpace(value)
-		if scanner.Text() == "(" {
-			return parseParameterList(scanner)
-		}
-		if scanner.Text() == "{" {
-			return []string{value}
-		}
-		value += scanner.Text()
-	}
-	strings.TrimSpace(value)
-	return []string{value}
-}
-
-func f() func(s string)() {
 	return nil
 }
