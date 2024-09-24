@@ -8,6 +8,10 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 bin/
+
+# Using this repo to test code
+mux/
+
 # Dependency directories (remove the comment below if you use Go modules)
 # /vendor/
 
