@@ -20,7 +20,7 @@ build: $(BINARY)
 # Run the binary (forces a build first if needed)
 run: build
 	@echo "Running the Go visualizer..."
-	$(BINARY) ./mux/
+	$(BINARY) ./
 
 # Format the Go source files
 fmt:
